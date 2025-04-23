@@ -6,5 +6,4 @@ namespace lexora_api.Data;
 
 public class AuthDbContext(DbContextOptions<AuthDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
-
 }
