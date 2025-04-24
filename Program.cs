@@ -17,7 +17,7 @@ builder.Services.AddOpenApi(options =>
     {
         document.Info = new()
         {
-            Title = "Lexora Library Management Service Documntation",
+            Title = "Lexora Library Management Service Documentation",
             Description = "This is the documentation for Lexora.",
             Version = "0.1"
         };
@@ -74,6 +74,7 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Default");
     options.RoutePrefix = "docs";
+    options.DocumentTitle = "Lexora";
 });
 
 app.UseHttpsRedirection();
