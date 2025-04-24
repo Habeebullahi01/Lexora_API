@@ -1,6 +1,7 @@
 using System.Text;
 using lexora_api.Data;
 using lexora_api.Models;
+using lexora_api.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await DbIintializer.SeedRoles(services);
 }
 
 // app.UseSwagger();

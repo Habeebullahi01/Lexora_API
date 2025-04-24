@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using lexora_api.Data;
 using lexora_api.Models;
 using lexora_api.Models.Dto.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -16,14 +17,16 @@ public class AuthController : ControllerBase
 
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _config;
+    private readonly AuthDbContext _authContext;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration config)
+    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration config, AuthDbContext authContext)
     {
         _userManager = userManager;
         _config = config;
+        _authContext = authContext;
     }
 
-    [HttpPost("register")]
+    [HttpPost("register/reader")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         ApplicationUser user = new() { Email = dto.Email, UserName = dto.Username };
@@ -33,6 +36,15 @@ public class AuthController : ControllerBase
         {
             return BadRequest(result.Errors);
         }
+
+        // add the user to the reader role
+        await _userManager.AddToRoleAsync(user, "Reader");
+
+        // add the user profile to the db
+        ReaderProfile newReader = new() { UserId = user.Id, User = user };
+        await _authContext.Readers.AddAsync(newReader);
+        await _authContext.SaveChangesAsync();
+
         return Ok("User registration succeeded");
     }
 
@@ -44,16 +56,22 @@ public class AuthController : ControllerBase
         {
             return Unauthorized("Invalid Credentials");
         }
-        string token = GenerateJWT(user);
+        string token = await GenerateJWT(user);
         return Ok(new { token });
     }
 
-    private string GenerateJWT(ApplicationUser user)
+    private async Task<string> GenerateJWT(ApplicationUser user)
     {
+        var role = await _userManager.GetRolesAsync(user);
+
+        string stringRoles = string.Join(",", role);
+
         var claims = new[]
        {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email!)
+            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Role, stringRoles),
+            new Claim("role", stringRoles)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
