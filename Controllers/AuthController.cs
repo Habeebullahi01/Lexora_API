@@ -27,7 +27,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register/reader")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<IEnumerable<IdentityError>>(StatusCodes.Status400BadRequest, "application/json")]
+    public async Task<IActionResult> RegisterReader([FromBody] RegisterDto dto)
     {
         ApplicationUser user = new() { Email = dto.Email, UserName = dto.Username };
         var result = await _userManager.CreateAsync(user, dto.Password);
@@ -47,8 +49,30 @@ public class AuthController : ControllerBase
 
         return Ok("User registration succeeded");
     }
+    [HttpPost("register/librarian")]
+    public async Task<IActionResult> RegisterLibrarian([FromBody] RegisterDto dto)
+    {
+        ApplicationUser user = new() { Email = dto.Email, UserName = dto.Username };
+        var result = await _userManager.CreateAsync(user, dto.Password);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        // add the user to the librarian role
+        await _userManager.AddToRoleAsync(user, "Librarian");
+
+        // add the user profile to the db
+        LibrarianProfile newLibrarian = new() { UserId = user.Id, User = user };
+        await _authContext.Librarians.AddAsync(newLibrarian);
+        await _authContext.SaveChangesAsync();
+
+        return Ok("User registration succeeded");
+    }
 
     [HttpPost("login")]
+    [ProducesResponseType<object>(StatusCodes.Status200OK, "application/json")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var user = await _userManager.FindByEmailAsync(dto.Email);
