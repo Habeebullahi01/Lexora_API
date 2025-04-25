@@ -13,4 +13,5 @@ public class Book
     public required string Description { get; set; }
     public int TotalQuantity { get; set; }
     public int AvailableQuantity { get; set; }
+    public DateTime DateAdded { get; set; }
 }

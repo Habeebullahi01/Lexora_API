@@ -1,6 +1,7 @@
 using System.Text;
 using lexora_api.Data;
 using lexora_api.Models;
+using lexora_api.Services;
 using lexora_api.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -39,7 +40,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 .AddDefaultTokenProviders();
 
 // Add JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -54,6 +59,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
 });
+
+// Add IBookService
+builder.Services.AddScoped<IBookService, BookService>();
 
 var app = builder.Build();
 

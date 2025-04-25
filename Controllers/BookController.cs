@@ -1,18 +1,75 @@
+using System.ComponentModel;
+using lexora_api.Models;
+using lexora_api.Models.Dto;
+using lexora_api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using static System.Net.Mime.MediaTypeNames;
 namespace lexora_api.Controllers;
 
-[ApiController]
 [Authorize(Roles = "Librarian")]
+[ApiController]
 [Route("api/book")]
-public class BookController : ControllerBase
+public class BookController(IBookService bookService) : ControllerBase
 {
 
+    private readonly IBookService _bookService = bookService;
+
     [HttpGet]
+    [EndpointName("Demo")]
+    [EndpointSummary("This is just to test the controller!")]
     public IActionResult D()
     {
         return Ok();
+    }
+
+    [HttpPost]
+    [EndpointSummary("Add a new book to the Library")]
+    [EndpointDescription("This endpoint allows Librarians to add Books to the Library.")]
+    public async Task<IActionResult> AddBook([FromBody][Description("Details needed for a new Book. All fields are required.")] BookDto dto)
+    {
+        // Validate DTO
+        if (dto.Quantity <= 0)
+        {
+            ModelState.AddModelError("Quantity", "You need to add at least 1 copy of the book");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // foreach (var k in ModelState.Keys)
+            // {
+            //     Console.WriteLine(k);
+            //     // var e = ModelState.GetEnumerator();
+            //     // if(ModelState)
+            //     Console.WriteLine(string.Join(",", ModelState.GetValueOrDefault(k)?.Errors!));
+            // }
+            // for
+
+            // Console.WriteLine(ModelState)
+            // return BadRequest("Check the input and try again");
+            // return BadRequest(new ProblemDetails() { Detail =  ModelSta});
+            // return new BadRequestObjectResult(ModelState) { ContentTypes = { Application.Json } }; = !
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            // Create Book
+            Book newBook = new() { Author = dto.Author, Title = dto.Title, ISBN = dto.ISBN, Description = dto.Description, TotalQuantity = dto.Quantity, DateAdded = DateTime.UtcNow, PublicationDate = dto.PublicationDate };
+            Book? createdBook = await _bookService.AddBook(newBook);
+            if (createdBook != null)
+            {
+                return Created($"https://thisAddress/{createdBook.Id}", createdBook);
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+        catch (Exception e)
+        {
+            return BadRequest($"An error occured: {e.Message}");
+        }
     }
 
 }
