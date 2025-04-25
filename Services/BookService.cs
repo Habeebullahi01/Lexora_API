@@ -63,18 +63,16 @@ public class BookService(AppDbContext context) : IBookService
         {
             bookToModify.Description = book.Description;
         }
-        if (!string.IsNullOrWhiteSpace(book.ISBN?.Trim()))
-        {
-            bookToModify.ISBN = book.ISBN;
-        }
         if (!string.IsNullOrWhiteSpace(book.Title?.Trim()))
         {
             bookToModify.Title = book.Title;
         }
-        // bookToModify.Author = book.Author;
-        // bookToModify.Description = book.Description;
-        // bookToModify.TotalQuantity = book.TotalQuantity;
-        book.ISBN = book.ISBN;
+
+        if (!string.IsNullOrWhiteSpace(book.PublicationDate.ToString()) && book.PublicationDate.Year > 2025)
+        {
+            bookToModify.PublicationDate = book.PublicationDate;
+        }
+
         await _context.SaveChangesAsync();
         return bookToModify;
     }

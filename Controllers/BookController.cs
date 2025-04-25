@@ -26,10 +26,10 @@ public class BookController(IBookService bookService) : ControllerBase
 
     [HttpPost]
     [EndpointSummary("Add a new book to the Library")]
-    [EndpointDescription("This endpoint allows Librarians to add Books to the Library.")]
+    [EndpointDescription("This endpoint allows Librarians to add Books to the Library. ")]
     [ProducesResponseType<Book>(StatusCodes.Status201Created, "application/json")]
     // [ProducesResponseType(typeof(ModelStateDictionary.ValueEnumerator), StatusCodes.Status400BadRequest, "application/json")]
-    public async Task<IActionResult> AddBook([FromBody][Description("Details needed for a new Book. All fields are required.")] CreateBookDto dto)
+    public async Task<IActionResult> AddBook([FromBody][Description("Details needed for a new Book. All fields are required. The ISBN, once set, cannot be modified.")] CreateBookDto dto)
     {
         // Validate DTO
         ValidateBookDto(dto);
@@ -75,7 +75,7 @@ public class BookController(IBookService bookService) : ControllerBase
 
     [HttpPatch("{id}")]
     [EndpointSummary("Modify an existing Book")]
-    [EndpointDescription("This is for modifying the details of a book. Currently, app properties of a Book can be modified, however, in a future update, not all properties will be modiialble. Only the Title/Name, Description, Author,and Quantity or any data points found to be changeable with very minimal negative side effects will be modifiable.")]
+    [EndpointDescription("This is for modifying the details of a book. Currently the following properties of a Book are modifiable; Title, Auhor, PublicationDate, Description, and Quantity. The Book's ISBN is unchangeable because it is meant to be a unique identifier.")]
     [ProducesResponseType<Book>(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> ModifyBook(int id, [FromBody] UpdateBookDto dto)
     {
