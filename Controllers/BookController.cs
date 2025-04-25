@@ -33,6 +33,26 @@ public class BookController(IBookService bookService) : ControllerBase
         {
             ModelState.AddModelError("Quantity", "You need to add at least 1 copy of the book");
         }
+        if (string.IsNullOrWhiteSpace(dto.Title))
+        {
+            ModelState.AddModelError("Title", "Title should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.ISBN))
+        {
+            ModelState.AddModelError("ISBN", "ISBN should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.Author))
+        {
+            ModelState.AddModelError("Author", "Author should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.Description))
+        {
+            ModelState.AddModelError("Description", "Description should not be empty");
+        }
+        if (dto.PublicationDate.Year > 2025)
+        {
+            ModelState.AddModelError("PublicationDate", "Publication date can't be in the future");
+        }
 
         if (!ModelState.IsValid)
         {

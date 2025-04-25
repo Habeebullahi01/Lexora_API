@@ -34,6 +34,11 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlite("Data Source=Auth.db");
 });
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlite("Data Source = Lexora.db");
+});
+
 // Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 .AddEntityFrameworkStores<AuthDbContext>()
