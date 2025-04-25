@@ -4,6 +4,7 @@ using lexora_api.Models.Dto;
 using lexora_api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using static System.Net.Mime.MediaTypeNames;
 namespace lexora_api.Controllers;
 
@@ -26,33 +27,12 @@ public class BookController(IBookService bookService) : ControllerBase
     [HttpPost]
     [EndpointSummary("Add a new book to the Library")]
     [EndpointDescription("This endpoint allows Librarians to add Books to the Library.")]
-    public async Task<IActionResult> AddBook([FromBody][Description("Details needed for a new Book. All fields are required.")] BookDto dto)
+    [ProducesResponseType<Book>(StatusCodes.Status201Created, "application/json")]
+    // [ProducesResponseType(typeof(ModelStateDictionary.ValueEnumerator), StatusCodes.Status400BadRequest, "application/json")]
+    public async Task<IActionResult> AddBook([FromBody][Description("Details needed for a new Book. All fields are required.")] CreateBookDto dto)
     {
         // Validate DTO
-        if (dto.Quantity <= 0)
-        {
-            ModelState.AddModelError("Quantity", "You need to add at least 1 copy of the book");
-        }
-        if (string.IsNullOrWhiteSpace(dto.Title))
-        {
-            ModelState.AddModelError("Title", "Title should not be empty");
-        }
-        if (string.IsNullOrWhiteSpace(dto.ISBN))
-        {
-            ModelState.AddModelError("ISBN", "ISBN should not be empty");
-        }
-        if (string.IsNullOrWhiteSpace(dto.Author))
-        {
-            ModelState.AddModelError("Author", "Author should not be empty");
-        }
-        if (string.IsNullOrWhiteSpace(dto.Description))
-        {
-            ModelState.AddModelError("Description", "Description should not be empty");
-        }
-        if (dto.PublicationDate.Year > 2025)
-        {
-            ModelState.AddModelError("PublicationDate", "Publication date can't be in the future");
-        }
+        ValidateBookDto(dto);
 
         if (!ModelState.IsValid)
         {
@@ -89,6 +69,52 @@ public class BookController(IBookService bookService) : ControllerBase
         catch (Exception e)
         {
             return BadRequest($"An error occured: {e.Message}");
+        }
+    }
+
+
+    [HttpPatch("{id}")]
+    [EndpointSummary("Modify an existing Book")]
+    [EndpointDescription("This is for modifying the details of a book. Currently, app properties of a Book can be modified, however, in a future update, not all properties will be modiialble. Only the Title/Name, Description, Author,and Quantity or any data points found to be changeable with very minimal negative side effects will be modifiable.")]
+    [ProducesResponseType<Book>(StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> ModifyBook(int id, [FromBody] UpdateBookDto dto)
+    {
+        var updatedBook = await _bookService.EditBook(id, dto);
+        if (updatedBook == null)
+        {
+            return NotFound();
+        }
+        else
+        {
+            return Accepted("theurl", updatedBook);
+        }
+    }
+
+    private void ValidateBookDto(CreateBookDto dto)
+    {
+        if (dto.Quantity <= 0)
+        {
+            ModelState.AddModelError("Quantity", "You need to add at least 1 copy of the book");
+        }
+        if (string.IsNullOrWhiteSpace(dto.Title))
+        {
+            ModelState.AddModelError("Title", "Title should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.ISBN))
+        {
+            ModelState.AddModelError("ISBN", "ISBN should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.Author))
+        {
+            ModelState.AddModelError("Author", "Author should not be empty");
+        }
+        if (string.IsNullOrWhiteSpace(dto.Description))
+        {
+            ModelState.AddModelError("Description", "Description should not be empty");
+        }
+        if (dto.PublicationDate.Year > 2025)
+        {
+            ModelState.AddModelError("PublicationDate", "Publication date can't be in the future");
         }
     }
 

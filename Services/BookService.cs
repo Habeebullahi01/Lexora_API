@@ -1,12 +1,22 @@
+using System.Threading.Tasks;
 using lexora_api.Data;
 using lexora_api.Models;
+using lexora_api.Models.Dto;
+using Microsoft.EntityFrameworkCore;
 
 namespace lexora_api.Services;
 
 public interface IBookService
 {
     public Task<Book?> AddBook(Book book);
-    // public Book? EditBook(int id, Book book);
+
+    /// <summary>
+    /// This is used to edit a Book
+    /// </summary>
+    /// <param name="id">The Id of the existing Book. Possibly from the route url.</param>
+    /// <param name="book">An object containing possibly null values of modifiable properties of Book</param>
+    /// <returns></returns>
+    public Task<Book?> EditBook(int id, UpdateBookDto book);
     // public List<Book> GetBooks(Filter? filter);
 }
 
@@ -36,5 +46,36 @@ public class BookService(AppDbContext context) : IBookService
             return null;
         }
 
+    }
+
+    public async Task<Book?> EditBook(int id, UpdateBookDto book)
+    {
+        var bookToModify = await _context.Books.SingleOrDefaultAsync<Book>(b => b.Id == id);
+        if (bookToModify == null)
+        {
+            return null;
+        }
+        if (!string.IsNullOrWhiteSpace(book.Author?.Trim()))
+        {
+            bookToModify.Author = book.Author;
+        }
+        if (!string.IsNullOrWhiteSpace(book.Description?.Trim()))
+        {
+            bookToModify.Description = book.Description;
+        }
+        if (!string.IsNullOrWhiteSpace(book.ISBN?.Trim()))
+        {
+            bookToModify.ISBN = book.ISBN;
+        }
+        if (!string.IsNullOrWhiteSpace(book.Title?.Trim()))
+        {
+            bookToModify.Title = book.Title;
+        }
+        // bookToModify.Author = book.Author;
+        // bookToModify.Description = book.Description;
+        // bookToModify.TotalQuantity = book.TotalQuantity;
+        book.ISBN = book.ISBN;
+        await _context.SaveChangesAsync();
+        return bookToModify;
     }
 }
