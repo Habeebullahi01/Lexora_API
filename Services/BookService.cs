@@ -17,17 +17,103 @@ public interface IBookService
     /// <param name="book">An object containing possibly null values of modifiable properties of Book</param>
     /// <returns></returns>
     public Task<Book?> EditBook(int id, UpdateBookDto book);
-    // public List<Book> GetBooks(Filter? filter);
+
+    /// <summary>
+    /// Retrieve a list of books
+    /// </summary>
+    /// <returns>List of Books</returns>
+    public Task<List<Book>> GetBooks();
+
+    /// <summary>
+    /// Retrieve a list of Books
+    /// </summary>
+    /// <param name="filter">Criteria to filter or sort</param>
+    /// <returns>List of Books</returns>
+    public Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit);
 }
 
 public class Filter
 {
-    public string? SortBy { get; set; }
+    public SortCriteria? SortBy { get; set; }
+    public Order? Order { get; set; } = Services.Order.Ascending;
+    // public int PerPage { get; set; }
+    // public int PageNumber { get; set; }
+}
+
+public enum SortCriteria
+{
+    PublicationDate = 1,
+    Title,
+    Author
+}
+
+public enum Order
+{
+    Descending,
+    Ascending,
 }
 
 public class BookService(AppDbContext context) : IBookService
 {
     private readonly AppDbContext _context = context;
+    public async Task<List<Book>> GetBooks()
+    {
+        var books = await _context.Books.OrderBy(b => b.Id).ToListAsync();
+        return books;
+    }
+
+    public async Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit)
+    {
+        var books = _context.Books;
+        // minimun limit is 1
+        limit = limit <= 0 ? 1 : limit;
+
+        IQueryable<Book> orderedBooks;
+        if (filter.Order > 0)
+        {
+            // Ascending
+            orderedBooks = filter.SortBy switch
+            {
+                SortCriteria.PublicationDate => books.OrderBy(b => b.PublicationDate),
+                SortCriteria.Title => books.OrderBy(b => b.Title),
+                SortCriteria.Author => books.OrderBy(b => b.Author),
+                _ => books.OrderBy(b => b.Id)
+            };
+        }
+        else
+        {
+            // Descending
+            orderedBooks = filter.SortBy switch
+            {
+                SortCriteria.PublicationDate => books.OrderByDescending(b => b.PublicationDate),
+                SortCriteria.Title => books.OrderByDescending(b => b.Title),
+                SortCriteria.Author => books.OrderByDescending(b => b.Author),
+                _ => books.OrderByDescending(b => b.Id)
+            };
+        }
+
+        var totalItems = orderedBooks.Count();
+        int totalPages;
+
+        if (totalItems > limit)
+        {
+            totalPages = totalItems / limit % 2 switch
+            {
+                > 0 => totalItems / limit + 1,
+                _ => totalItems / limit
+            };
+        }
+        else
+        {
+            totalPages = 1;
+        }
+
+        var skipped = orderedBooks.Skip(pageNumber - 1 * limit);
+        var picked = await skipped.Take(limit).ToListAsync();
+        return new BooksResponse() { Books = picked, CurrentPage = pageNumber, ItemsPerPage = limit, TotalItems = totalItems, TotalPages = totalPages };
+
+        // return await picked.ToListAsync();
+    }
 
     public async Task<Book?> AddBook(Book book)
     {

@@ -18,3 +18,16 @@ public class UpdateBookDto
     public string? Description { get; set; }
     public int? Quantity { get; set; }
 }
+
+public class BooksResponse : BulkResponse
+{
+    public required List<Book> Books { get; set; }
+}
+
+public abstract class BulkResponse
+{
+    public int TotalPages { get; set; }
+    public int CurrentPage { get; set; }
+    public int TotalItems { get; set; }
+    public int ItemsPerPage { get; set; }
+}
