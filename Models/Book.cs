@@ -14,4 +14,5 @@ public class Book
     public int TotalQuantity { get; set; }
     public int AvailableQuantity { get; set; }
     public DateTime DateAdded { get; set; }
+    public ICollection<BorrowRequest>? Requests { get; } = [];
 }

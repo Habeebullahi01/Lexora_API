@@ -11,8 +11,8 @@ using lexora_api.Data;
 namespace lexora_api.Migrations.AppDb
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250425091754_Initial")]
-    partial class Initial
+    [Migration("20250427060138_NewInitial")]
+    partial class NewInitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,6 +57,44 @@ namespace lexora_api.Migrations.AppDb
                     b.HasKey("Id");
 
                     b.ToTable("Books");
+                });
+
+            modelBuilder.Entity("lexora_api.Models.BorrowRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LibrarianID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("PenaltyIncurred")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("PickUpDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ReaderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("ReturnDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Requests");
                 });
 #pragma warning restore 612, 618
         }

@@ -23,7 +23,6 @@ public class BookController(IBookService bookService) : ControllerBase
     public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] SortCriteria sortBy = 0, [FromQuery] int limit = 10)
     {
         var retrievedBooks = await _bookService.GetBooks(new Filter() { SortBy = sortBy }, page, limit);
-        // BooksResponse response = new() { Books = retrievedBooks, CurrentPage = 1, ItemsPerPage = 10, TotalItems = 2, TotalPages = 3 };
         return Ok(retrievedBooks);
     }
 

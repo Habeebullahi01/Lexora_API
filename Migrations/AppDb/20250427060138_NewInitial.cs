@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace lexora_api.Migrations.AppDb
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class NewInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,6 +30,27 @@ namespace lexora_api.Migrations.AppDb
                 {
                     table.PrimaryKey("PK_Books", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Requests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    PenaltyIncurred = table.Column<decimal>(type: "TEXT", nullable: false),
+                    StartDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    EndDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    PickUpDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    ReturnDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Duration = table.Column<int>(type: "INTEGER", nullable: false),
+                    ReaderId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LibrarianID = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Requests", x => x.Id);
+                });
         }
 
         /// <inheritdoc />
@@ -37,6 +58,9 @@ namespace lexora_api.Migrations.AppDb
         {
             migrationBuilder.DropTable(
                 name: "Books");
+
+            migrationBuilder.DropTable(
+                name: "Requests");
         }
     }
 }
