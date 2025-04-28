@@ -67,6 +67,8 @@ builder.Services.AddAuthentication(options =>
 
 // Add IBookService
 builder.Services.AddScoped<IBookService, BookService>();
+//Add IRequestService
+builder.Services.AddScoped<IRequestService, RequestService>();
 
 var app = builder.Build();
 

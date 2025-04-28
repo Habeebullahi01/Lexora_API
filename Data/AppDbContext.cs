@@ -20,7 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         // One-to-many: One request can have many Books: A join table called RequestBooks
         modelBuilder.Entity<BorrowRequest>()
         .HasMany(r => r.Books)
-        .WithMany(b => b.Requests)
+        .WithMany()
         .UsingEntity("RequestBooks");
     }
 }

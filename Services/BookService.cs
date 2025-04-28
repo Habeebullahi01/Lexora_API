@@ -30,6 +30,8 @@ public interface IBookService
     /// <param name="filter">Criteria to filter or sort</param>
     /// <returns>List of Books</returns>
     public Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit);
+
+    public Task<List<Book>> GetBooks(List<int> bookIds);
 }
 
 public class Filter
@@ -114,6 +116,24 @@ public class BookService(AppDbContext context) : IBookService
 
         // return await picked.ToListAsync();
     }
+
+    public async Task<List<Book>> GetBooks(List<int> bookIds)
+    {
+        List<Book> books = [];
+
+        foreach (int id in bookIds)
+        {
+            var retrivedBook = await _context.Books.FindAsync(id);
+            if (retrivedBook != null)
+            {
+                // Console.WriteLine(retrivedBook.Author);
+                books.Add(retrivedBook);
+            }
+        }
+
+        return books;
+    }
+
 
     public async Task<Book?> AddBook(Book book)
     {
