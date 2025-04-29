@@ -16,14 +16,35 @@ public class RequestController(IRequestService requestService, IBookService book
     private readonly IBookService _bookService = bookService;
 
     [HttpGet]
+    [Authorize(Roles = "Librarian")]
     [ProducesResponseType<List<BorrowRequest>>(200)]
     public async Task<IActionResult> RetrieveRequests()
     {
         return Ok(await _requestService.GetBorrowRequestsAsync());
     }
 
+    [HttpPost("approve/{id}")]
+    [Authorize(Roles = "Librarian")]
+    [EndpointDescription("For Approving a request. Only Librarians can use this endpoint.")]
+    [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> ApproveRequest(int id)
+    {
+        var librarianId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value;
+        CustomResponse res = await _requestService.Approve(id, librarianId);
+        if (!res.Succeeded)
+        {
+            return BadRequest(new ProblemDetails() { Detail = res.Reason });
+        }
+        else
+        {
+            return Ok(res.Request);
+        }
+    }
+
     [HttpPost]
     [Authorize(Roles = "Reader")]
+    [EndpointDescription("For creating a new borrow request. Only readers can use this endpoint.")]
     [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Create([FromBody][Description("A list/array of IDs of the books to be borrowed, and the number of days for which they are requested.")] NewRequestDto newRequestDto)
     {
@@ -37,6 +58,7 @@ public class RequestController(IRequestService requestService, IBookService book
         }
         else
         {
+            Console.WriteLine("From Create action in reQuest controller");
             Console.WriteLine(requestedBooks[0].Author);
         }
 
@@ -50,7 +72,6 @@ public class RequestController(IRequestService requestService, IBookService book
         bool userHasPendingRequest = await _requestService.CheckPendingRequest(userId.Value);
         if (!userHasPendingRequest)
         {
-
             // Add Request to Requests Table
             var a = await _requestService.CreateRequest(nbr);
             if (a != null)
@@ -68,4 +89,6 @@ public class RequestController(IRequestService requestService, IBookService book
             return BadRequest(new ProblemDetails() { Detail = "User already has a pending request." });
         }
     }
+
+
 }

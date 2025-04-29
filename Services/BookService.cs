@@ -32,6 +32,13 @@ public interface IBookService
     public Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit);
 
     public Task<List<Book>> GetBooks(List<int> bookIds);
+
+    /// <summary>
+    /// Reduces the AvailableQuantity property of a series of Books by 1 each.
+    /// </summary>
+    /// <param name="bookIds">A List of Ids corresponding to those of the Books to be operated on</param>
+    public void BorrowBooks(List<int> bookIds);
+
 }
 
 public class Filter
@@ -181,5 +188,22 @@ public class BookService(AppDbContext context) : IBookService
 
         await _context.SaveChangesAsync();
         return bookToModify;
+    }
+
+
+    public async void BorrowBooks(List<int> bookIds)
+    {
+        Console.WriteLine("Borrowing books...");
+        List<Book> books = await _context.Books.Where(b => bookIds.Contains(b.Id)).ToListAsync();
+        Console.WriteLine($"There are {bookIds.Count} books to work on");
+        Console.WriteLine($"There are {books.Count} books to work on");
+        foreach (Book book in books)
+        {
+            Console.WriteLine(book.Author);
+            Console.WriteLine(book.AvailableQuantity);
+            book.AvailableQuantity -= 1;
+            Console.WriteLine(book.AvailableQuantity);
+        }
+        await _context.SaveChangesAsync();
     }
 }

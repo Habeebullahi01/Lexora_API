@@ -21,6 +21,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<BorrowRequest>()
         .HasMany(r => r.Books)
         .WithMany()
-        .UsingEntity("RequestBooks");
+        .UsingEntity<Dictionary<string, object>>("RequestBooks", j => j.HasOne<Book>().WithMany().HasForeignKey("BookId"), j => j.HasOne<BorrowRequest>().WithMany().HasForeignKey("BorrowRequestId"));
     }
 }
