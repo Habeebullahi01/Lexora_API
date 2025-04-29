@@ -31,6 +31,11 @@ public interface IBookService
     /// <returns>List of Books</returns>
     public Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit);
 
+    /// <summary>
+    /// Retrieves a List of Books without pagination data. For use by other services.
+    /// </summary>
+    /// <param name="bookIds">A List of integers corresponding to the Ids of the books the requested</param>
+    /// <returns>A List of Books</returns>
     public Task<List<Book>> GetBooks(List<int> bookIds);
 
     /// <summary>
@@ -104,18 +109,7 @@ public class BookService(AppDbContext context) : IBookService
         var totalItems = orderedBooks.Count();
         int totalPages;
 
-        if (totalItems > limit)
-        {
-            totalPages = totalItems / limit % 2 switch
-            {
-                > 0 => totalItems / limit + 1,
-                _ => totalItems / limit
-            };
-        }
-        else
-        {
-            totalPages = 1;
-        }
+        totalPages = (int)Math.Ceiling((decimal)totalItems / limit);
 
         var skipped = orderedBooks.Skip(pageNumber - 1 * limit);
         var picked = await skipped.Take(limit).ToListAsync();

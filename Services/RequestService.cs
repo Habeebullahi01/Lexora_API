@@ -1,12 +1,27 @@
 using lexora_api.Data;
 using lexora_api.Models;
+using lexora_api.Models.Dto;
 using Microsoft.EntityFrameworkCore;
 
 namespace lexora_api.Services;
 
 public interface IRequestService
 {
+    /// <summary>
+    /// Retrieves a list of BorrowRequests
+    /// </summary>
+    /// <returns>List of BorrowRequest</returns>
     public Task<List<BorrowRequest>> GetBorrowRequestsAsync();
+    /// <summary>
+    /// Retrieves a list of BorrowRequest with pagination data.
+    /// </summary>
+    /// <param name="page"></param>
+    /// <param name="limit"></param>
+    /// <param name="order"></param>
+    /// <param name="status"></param>
+    /// <returns></returns>
+    public Task<RequestsResponse> GetBorrowRequestsAsync(int page, int limit, Order order, RequestStatus status);
+
     public Task<BorrowRequest> CreateRequest(BorrowRequest request);
     public Task<bool> CheckPendingRequest(string userId);
     public Task<CustomResponse> Approve(int requestId, string librarianId);
@@ -22,6 +37,33 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
     {
         var retrieved = await _context.Requests.OrderBy(r => r.Id).Include(r => r.Books).ToListAsync();
         return retrieved;
+    }
+    public async Task<RequestsResponse> GetBorrowRequestsAsync(int page, int limit, Order order, RequestStatus status)
+    {
+        // var response = new RequestsResponse() {}
+        var reqs = _context.Requests;
+        limit = limit <= 0 ? 1 : limit;
+        IQueryable<BorrowRequest> orderedRequests;
+        if (order.Equals(Order.Ascending))
+        {
+            orderedRequests = reqs.OrderBy(r => r.Id).Where(r => r.Status == status).Include(r => r.Books);
+        }
+        else
+        {
+            orderedRequests = reqs.OrderByDescending(r => r.Id).Where(r => r.Status == status).Include(r => r.Books);
+        }
+        int totalItems = orderedRequests.Count();
+
+        int totalPages;
+        totalPages = (int)Math.Ceiling((decimal)totalItems / limit);
+
+        var taken = orderedRequests.Skip((page - 1) * limit).Take(limit);
+
+        var retrieved = taken.ToList();
+
+        RequestsResponse response = new() { Requests = retrieved, ItemsPerPage = limit, CurrentPage = page, TotalItems = totalItems, TotalPages = totalPages };
+        // var retrieved = await _context.Requests.OrderBy(r => r.Id).Include(r => r.Books).ToListAsync();
+        return response;
     }
 
     public async Task<BorrowRequest> CreateRequest(BorrowRequest request)

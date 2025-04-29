@@ -17,10 +17,13 @@ public class RequestController(IRequestService requestService, IBookService book
 
     [HttpGet]
     [Authorize(Roles = "Librarian")]
-    [ProducesResponseType<List<BorrowRequest>>(200)]
-    public async Task<IActionResult> RetrieveRequests()
+    [ProducesResponseType<RequestsResponse>(200)]
+    [EndpointDescription(@"The 'status' field of the query parameters is representative of the status of the request which is desired. 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Returned. The default is 0 which corresponds to Pending requests.
+    The order field specifies the order; 0 = Descending (newest first) and 1 = Ascending (oldest first)")]
+    public async Task<IActionResult> RetrieveRequests(int size = 10, int page = 1, Order order = Order.Descending, RequestStatus status = RequestStatus.Pending)
     {
-        return Ok(await _requestService.GetBorrowRequestsAsync());
+        // var paginatedResponse = await _requestService.
+        return Ok(await _requestService.GetBorrowRequestsAsync(page, size, order, status));
     }
 
     [HttpPost("approve/{id}")]
