@@ -44,6 +44,13 @@ public interface IBookService
     /// <param name="bookIds">A List of Ids corresponding to those of the Books to be operated on</param>
     public void BorrowBooks(List<int> bookIds);
 
+    /// <summary>
+    /// Retrieves the full information about a single book.
+    /// </summary>
+    /// <param name="bookId">Id of the book whose information is needed</param>
+    /// <returns>A complete Book object</returns>
+    public Task<Book?> GetBook(int bookId);
+
 }
 
 public class Filter
@@ -199,5 +206,11 @@ public class BookService(AppDbContext context) : IBookService
             Console.WriteLine(book.AvailableQuantity);
         }
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<Book?> GetBook(int bookId)
+    {
+        var b = await _context.Books.FirstOrDefaultAsync(book => book.Id == bookId);
+        return b;
     }
 }

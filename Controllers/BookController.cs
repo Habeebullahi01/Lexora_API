@@ -20,10 +20,27 @@ public class BookController(IBookService bookService) : ControllerBase
     [AllowAnonymous]
     [EndpointSummary("Retrieve all Books")]
     [ProducesResponseType<BooksResponse>(StatusCodes.Status200OK, "application/json")]
-    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] SortCriteria sortBy = 0, [FromQuery] int limit = 10)
+    public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] SortCriteria sortBy = SortCriteria.PublicationDate, [FromQuery] int limit = 10)
     {
         var retrievedBooks = await _bookService.GetBooks(new Filter() { SortBy = sortBy }, page, limit);
         return Ok(retrievedBooks);
+    }
+
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    [EndpointSummary("Retrieve a single Book by its Id")]
+    [ProducesResponseType<Book>(StatusCodes.Status200OK, "application/json")]
+    public async Task<IActionResult> GetBook(int id)
+    {
+        var retrievedBook = await _bookService.GetBook(id);
+        if (retrievedBook != null)
+        {
+            return Ok(retrievedBook);
+        }
+        else
+        {
+            return NotFound();
+        }
     }
 
     [HttpPost]

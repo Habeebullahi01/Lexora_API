@@ -43,7 +43,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 .AddEntityFrameworkStores<AuthDbContext>()
 .AddDefaultTokenProviders();
-
+// Configure Identity
+builder.Services.Configure<IdentityOptions>(op =>
+{
+    op.User.RequireUniqueEmail = true;
+});
 // Add JWT Authentication
 builder.Services.AddAuthentication(options =>
 {

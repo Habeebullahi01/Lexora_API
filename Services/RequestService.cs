@@ -59,7 +59,7 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
 
         var taken = orderedRequests.Skip((page - 1) * limit).Take(limit);
 
-        var retrieved = taken.ToList();
+        var retrieved = await taken.ToListAsync();
 
         RequestsResponse response = new() { Requests = retrieved, ItemsPerPage = limit, CurrentPage = page, TotalItems = totalItems, TotalPages = totalPages };
         // var retrieved = await _context.Requests.OrderBy(r => r.Id).Include(r => r.Books).ToListAsync();
@@ -108,7 +108,7 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
             return response;
         }
         // ensure request is pending or rejected
-        if (request.Status != RequestStatus.Pending || request.Status != RequestStatus.Rejected)
+        if (request.Status != RequestStatus.Pending && request.Status != RequestStatus.Rejected)
         {
             CustomResponse response = new()
             {

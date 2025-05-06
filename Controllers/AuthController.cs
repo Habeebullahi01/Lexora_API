@@ -4,6 +4,7 @@ using System.Text;
 using lexora_api.Data;
 using lexora_api.Models;
 using lexora_api.Models.Dto.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -84,6 +85,16 @@ public class AuthController : ControllerBase
         return Ok(new { token });
     }
 
+    [Authorize]
+    [HttpGet("info")]
+    public IActionResult GetUserInfo()
+    {
+        var userName = User.Identity?.Name;
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        UserInfo userInfo = new() { Email = email, Username = userName, Role = role };
+        return Ok(userInfo);
+    }
     private async Task<string> GenerateJWT(ApplicationUser user)
     {
         var role = await _userManager.GetRolesAsync(user);
@@ -95,7 +106,7 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Role, stringRoles),
-            new Claim("role", stringRoles)
+            new Claim(ClaimTypes.Name, user.UserName!)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
