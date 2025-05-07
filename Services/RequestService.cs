@@ -25,7 +25,12 @@ public interface IRequestService
     public Task<BorrowRequest> CreateRequest(BorrowRequest request);
     public Task<bool> CheckPendingRequest(string userId);
     public Task<CustomResponse> Approve(int requestId, string librarianId);
-
+    /// <summary>
+    /// Retrieve a single BorrowRequest object by it's ID
+    /// </summary>
+    /// <param name="requestId">The Id of the BorrowRequest</param>
+    /// <returns>A BorrowRequest, or null if none is found with the Id</returns>
+    public Task<BorrowRequest?> GetBorrowRequest(int requestId);
 
 }
 
@@ -163,6 +168,12 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
             return response;
         }
         // 
+    }
+
+    public async Task<BorrowRequest?> GetBorrowRequest(int requestId)
+    {
+        var r = await _context.Requests.Include(r => r.Books).SingleOrDefaultAsync(r => r.Id == requestId);
+        return r;
     }
 
 }

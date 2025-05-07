@@ -45,10 +45,27 @@ public class RequestController(IRequestService requestService, IBookService book
         }
     }
 
+
+    [HttpGet("{id}")]
+    [EndpointSummary("Retrieves a single Borrow Request")]
+    [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK, "application/json")]
+    public async Task<IActionResult> GetOne(int id)
+    {
+        BorrowRequest? b = await _requestService.GetBorrowRequest(id);
+        if (b == null)
+        {
+            return NotFound();
+        }
+        else
+        {
+            return Ok(b);
+        }
+    }
+
     [HttpPost]
     [Authorize(Roles = "Reader")]
     [EndpointDescription("For creating a new borrow request. Only readers can use this endpoint.")]
-    [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK)]
+    [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK, "application/json")]
     public async Task<IActionResult> Create([FromBody][Description("A list/array of IDs of the books to be borrowed, and the number of days for which they are requested.")] NewRequestDto newRequestDto)
     {
         // extract the user id from ?
