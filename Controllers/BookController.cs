@@ -26,6 +26,16 @@ public class BookController(IBookService bookService) : ControllerBase
         return Ok(retrievedBooks);
     }
 
+    [HttpGet("few")]
+    [AllowAnonymous]
+    [EndpointSummary("Retrieve some Books")]
+    [ProducesResponseType<List<Book>>(StatusCodes.Status200OK, "application/json")]
+    public async Task<IActionResult> GetSomeBooks([FromQuery] List<int> bookIds)
+    {
+        var retrievedBooks = await _bookService.GetBooks(bookIds);
+        return Ok(retrievedBooks);
+    }
+
     [HttpGet("{id}")]
     [AllowAnonymous]
     [EndpointSummary("Retrieve a single Book by its Id")]
@@ -109,6 +119,21 @@ public class BookController(IBookService bookService) : ControllerBase
         }
     }
 
+    [HttpDelete("{id}")]
+    [EndpointSummary("Delete an existing Book")]
+    [ProducesResponseType<string>(StatusCodes.Status204NoContent, "application/json")]
+    public async Task<IActionResult> DeleteBook(int id)
+    {
+        var bookRemovalSucceed = await _bookService.DeleteBook(id);
+        if (bookRemovalSucceed)
+        {
+            return NoContent();
+        }
+        else
+        {
+            return NotFound();
+        }
+    }
     private void ValidateBookDto(CreateBookDto dto)
     {
         if (dto.Quantity <= 0)

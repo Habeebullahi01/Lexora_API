@@ -74,6 +74,18 @@ builder.Services.AddScoped<IBookService, BookService>();
 //Add IRequestService
 builder.Services.AddScoped<IRequestService, RequestService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        // policy.WithOrigins("https://localhost:7256") // Allow specific origins
+        policy.AllowAnyOrigin() // Allow specific origins
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+        //   .AllowCredentials(); // Optional, if you're using cookies or auth headers
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -95,6 +107,8 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "docs";
     options.DocumentTitle = "Lexora";
 });
+
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

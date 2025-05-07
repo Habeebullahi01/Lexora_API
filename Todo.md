@@ -4,7 +4,8 @@ _Should be open issues_
 
 - [x] paginated response for requests retrival ([GET]/api/requests)
 - [x] endpoint to retrieve all info about a single book
-- [ ] endpoint to retrive info of a list of input bookIds
+- [x] endpoint to retrive info of a list of input bookIds
+- [ ] delete book endpoint
 
 ### 💡
 

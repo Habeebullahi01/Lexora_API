@@ -51,6 +51,12 @@ public interface IBookService
     /// <returns>A complete Book object</returns>
     public Task<Book?> GetBook(int bookId);
 
+    /// <summary>
+    /// Remove a book from the library
+    /// </summary>
+    /// <param name="bookId">The id of the book to remove</param>
+    /// <returns>False when the input bookId does not match with a data</returns>
+    public Task<bool> DeleteBook(int bookId);
 }
 
 public class Filter
@@ -212,5 +218,17 @@ public class BookService(AppDbContext context) : IBookService
     {
         var b = await _context.Books.FirstOrDefaultAsync(book => book.Id == bookId);
         return b;
+    }
+
+    public async Task<bool> DeleteBook(int bookId)
+    {
+        var bookToDelete = await _context.Books.FirstAsync(b => b.Id == bookId);
+        if (bookToDelete == null)
+        {
+            return false;
+        }
+        var delOp = _context.Books.Remove(bookToDelete);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }
