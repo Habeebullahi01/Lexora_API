@@ -32,6 +32,12 @@ public interface IRequestService
     /// <returns>A BorrowRequest, or null if none is found with the Id</returns>
     public Task<BorrowRequest?> GetBorrowRequest(int requestId);
 
+    /// <summary>
+    /// Retrieve all BorrowRequest made by a user. User Id is gotten from the User object (populated from the JWT in th Authorization header)
+    /// </summary>
+    /// <returns>A Paginated list of BorrowRequests. The pagination is only to adhere to standards, no provisions are made for retriving pages</returns>
+    public Task<RequestsResponse> RetrieveUserRequests(string userId);
+
 }
 
 public class RequestService(AppDbContext context, IBookService bookService) : IRequestService
@@ -174,6 +180,13 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
     {
         var r = await _context.Requests.Include(r => r.Books).SingleOrDefaultAsync(r => r.Id == requestId);
         return r;
+    }
+
+    public async Task<RequestsResponse> RetrieveUserRequests(string userId)
+    {
+        var r = await _context.Requests.Where(r => r.ReaderId == userId).OrderBy(r => r.Id).Include(r => r.Books).ToListAsync();
+        RequestsResponse res = new() { Requests = r, CurrentPage = 1, ItemsPerPage = r.Count, TotalItems = r.Count, TotalPages = 1 };
+        return res;
     }
 
 }

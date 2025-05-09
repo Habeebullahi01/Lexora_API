@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Security.Claims;
 using lexora_api.Models;
 using lexora_api.Models.Dto;
 using lexora_api.Services;
@@ -60,6 +61,19 @@ public class RequestController(IRequestService requestService, IBookService book
         {
             return Ok(b);
         }
+    }
+
+    [HttpGet("user")]
+    [Authorize(Roles = "Reader")]
+    public async Task<IActionResult> GetUserRequest()
+    {
+        string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return NotFound();
+        }
+        var res = await _requestService.RetrieveUserRequests(userId);
+        return Ok(res);
     }
 
     [HttpPost]

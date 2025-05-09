@@ -5,7 +5,8 @@ _Should be open issues_
 - [x] paginated response for requests retrival ([GET]/api/requests)
 - [x] endpoint to retrieve all info about a single book
 - [x] endpoint to retrive info of a list of input bookIds
-- [ ] delete book endpoint
+- [x] delete book endpoint
+- [ ] Borrow Request DTO when sending to Reader should be contain number of books requested and not the actual book objects, to reduce size and improve speed
 
 ### 💡
 
