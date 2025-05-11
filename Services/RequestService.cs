@@ -22,9 +22,9 @@ public interface IRequestService
     /// <returns></returns>
     public Task<RequestsResponse> GetBorrowRequestsAsync(int page, int limit, Order order, RequestStatus status);
 
-    public Task<BorrowRequest> CreateRequest(BorrowRequest request);
+    public Task<CreationResponse> CreateRequest(BorrowRequest request);
     public Task<bool> CheckPendingRequest(string userId);
-    public Task<CustomResponse> Approve(int requestId, string librarianId);
+    public Task<ApprovalResponse> Approve(int requestId, string librarianId);
     /// <summary>
     /// Retrieve a single BorrowRequest object by it's ID
     /// </summary>
@@ -77,18 +77,29 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
         return response;
     }
 
-    public async Task<BorrowRequest> CreateRequest(BorrowRequest request)
+    public async Task<CreationResponse> CreateRequest(BorrowRequest request)
     {
+        // create the CreationResponse object here and return it to the controller
+        CreationResponse response = new();
+        // validate user's pending request status
+        if (await CheckPendingRequest(request.ReaderId))
+        {
+            response.HasPendingRequest = true;
+            response.Reason = "User has a pending request";
+            return response; // return
+        }
+
         try
         {
             await _context.Requests.AddAsync(request);
+            response.Request = request;
             await _context.SaveChangesAsync();
         }
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
         }
-        return request;
+        return response;
     }
 
     public async Task<bool> CheckPendingRequest(string userId)
@@ -105,13 +116,13 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
 
     }
 
-    public async Task<CustomResponse> Approve(int requestId, string librarianId)
+    public async Task<ApprovalResponse> Approve(int requestId, string librarianId)
     {
         // retrieve request
         BorrowRequest? request = await _context.Requests.Include(r => r.Books).FirstOrDefaultAsync(r => r.Id == requestId);
         if (request == null)
         {
-            CustomResponse response = new()
+            ApprovalResponse response = new()
             {
                 RequestNotFound = true,
                 Reason = "No request with the provided ID was found."
@@ -121,7 +132,7 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
         // ensure request is pending or rejected
         if (request.Status != RequestStatus.Pending && request.Status != RequestStatus.Rejected)
         {
-            CustomResponse response = new()
+            ApprovalResponse response = new()
             {
                 RequestNotPending = true,
                 Reason = "Request is either approved or returned."
@@ -153,10 +164,10 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
             request.StartDate = DateOnly.FromDateTime(startDate);
             request.EndDate = DateOnly.FromDateTime(endDate);
             await _context.SaveChangesAsync();
-            CustomResponse response = new()
+            ApprovalResponse response = new()
             {
                 Request = request,
-                Reason = "At least one book in the request is unavailable"
+                // Reason = "At least one book in the request is unavailable"
             };
             // reduce the quantity of available books
             Console.WriteLine(bookIds.Count);
@@ -165,7 +176,7 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
         }
         else
         {
-            CustomResponse response = new()
+            ApprovalResponse response = new()
             {
                 UnavailableBooks = uB,
                 Reason = $"The request contains {unavailableBooks.Count} unavailable book(s)"
@@ -191,12 +202,29 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
 
 }
 
-public class CustomResponse
+public abstract class CustomResponse
 {
-    public BorrowRequest? Request;
-    public int UnavailableBooks;
-    public bool RequestNotFound;
-    public bool RequestNotPending;
-    public string? Reason;
-    public bool Succeeded => UnavailableBooks == 0 && !RequestNotFound && !RequestNotPending;
+    public BorrowRequest? Request { get; set; }
+    public int UnavailableBooks { get; set; }
+    // public bool RequestNotFound;
+    // public bool RequestNotPending;
+    public string? Reason { get; set; }
+    public abstract bool Succeeded();
+}
+public class ApprovalResponse : CustomResponse
+{
+    public bool RequestNotPending { get; set; }
+    public bool RequestNotFound { get; set; }
+    public override bool Succeeded() { return UnavailableBooks == 0 && !RequestNotFound && !RequestNotPending; }
+
+}
+
+public class CreationResponse : CustomResponse
+{
+    public bool HasPendingRequest { get; set; }
+    public bool NoBooks { get; set; }
+    public override bool Succeeded()
+    {
+        return UnavailableBooks == 0 && !NoBooks && !HasPendingRequest;
+    }
 }

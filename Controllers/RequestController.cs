@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Security.Claims;
+using System.Text.Json;
 using lexora_api.Models;
 using lexora_api.Models.Dto;
 using lexora_api.Services;
@@ -35,8 +36,8 @@ public class RequestController(IRequestService requestService, IBookService book
     public async Task<IActionResult> ApproveRequest(int id)
     {
         var librarianId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value;
-        CustomResponse res = await _requestService.Approve(id, librarianId);
-        if (!res.Succeeded)
+        ApprovalResponse res = await _requestService.Approve(id, librarianId);
+        if (!res.Succeeded())
         {
             return BadRequest(new ProblemDetails() { Detail = res.Reason });
         }
@@ -82,45 +83,42 @@ public class RequestController(IRequestService requestService, IBookService book
     [ProducesResponseType<BorrowRequest>(StatusCodes.Status200OK, "application/json")]
     public async Task<IActionResult> Create([FromBody][Description("A list/array of IDs of the books to be borrowed, and the number of days for which they are requested.")] NewRequestDto newRequestDto)
     {
-        // extract the user id from ?
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        // fetch the requested books from book service
-        List<Book> requestedBooks = await _bookService.GetBooks(newRequestDto.Books);
-        if (requestedBooks.Count <= 0)
-        {
-            Console.WriteLine("requested books is empty");
-        }
-        else
-        {
-            Console.WriteLine("From Create action in reQuest controller");
-            Console.WriteLine(requestedBooks[0].Author);
-        }
-
-        // nbr.Books.AddRange(requestedBooks);
+        CreationResponse a = new();
         BorrowRequest nbr = new() { Duration = newRequestDto.Duration, ReaderId = userId!.Value };
-        nbr.Books.AddRange(requestedBooks);
         nbr.StartDate = new DateOnly();
         nbr.EndDate = new DateOnly().AddDays(nbr.Duration);
-
-        // Check for existing pending request by user
-        bool userHasPendingRequest = await _requestService.CheckPendingRequest(userId.Value);
-        if (!userHasPendingRequest)
+        // extract the user id from ?
+        // fetch the requested books from book service
+        List<Book> requestedBooks = await _bookService.GetBooks(newRequestDto.Books);
+        if (newRequestDto.Books.Count == 0)
         {
-            // Add Request to Requests Table
-            var a = await _requestService.CreateRequest(nbr);
-            if (a != null)
-            {
+            // a.Reason = "No books were requested";
+            // a.NoBooks = true;
+            return BadRequest(new ProblemDetails() { Detail = "No books were requested." });
+        }
+        if (requestedBooks.Count <= 0)
+        {
+            // a.UnavailableBooks = newRequestDto.Books.Count - requestedBooks.Count;
+            // a.Reason = "No requested book is available.";
+            Console.WriteLine("requested books is empty");
+            return BadRequest(new ProblemDetails() { Detail = "No requested book is available" });
+        }
+        nbr.Books.AddRange(requestedBooks);
 
-                return Ok(a);
-            }
-            else
-            {
-                return BadRequest(nbr);
-            }
+        // send new instance of bookrequest to service.
+        var aa = await _requestService.CreateRequest(nbr);
+        Console.WriteLine(aa.Succeeded());
+        Console.WriteLine(aa.Reason);
+        Console.WriteLine(aa.HasPendingRequest);
+
+        if (aa.Succeeded())
+        {
+            return Ok(aa);
         }
         else
         {
-            return BadRequest(new ProblemDetails() { Detail = "User already has a pending request." });
+            return BadRequest(aa);
         }
     }
 
