@@ -38,6 +38,13 @@ public interface IRequestService
     /// <returns>A Paginated list of BorrowRequests. The pagination is only to adhere to standards, no provisions are made for retriving pages</returns>
     public Task<RequestsResponse> RetrieveUserRequests(string userId);
 
+    /// <summary>
+    /// Reject a request
+    /// </summary>
+    /// <param name="requestId">Id of the request to be rejected</param>
+    /// <param name="librarianId">Id of the librarian who initiated this action</param>
+    /// <returns>A rejection response object</returns>
+    public Task<RejectionResponse> RejectRequest(int requestId, string librarianId);
 }
 
 public class RequestService(AppDbContext context, IBookService bookService) : IRequestService
@@ -187,6 +194,23 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
         // 
     }
 
+    public async Task<RejectionResponse> RejectRequest(int requestId, string librarianId)
+    {
+        var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == requestId);
+        RejectionResponse res = new() { Request = request };
+        if (request == null)
+        {
+            res.RequestNotFound = true;
+            res.Reason = "The request was not found";
+            return res;
+        }
+        request.Status = RequestStatus.Rejected;
+        request.LibrarianID = librarianId;
+        await _context.SaveChangesAsync();
+        res.Request = request;
+        return res;
+    }
+
     public async Task<BorrowRequest?> GetBorrowRequest(int requestId)
     {
         var r = await _context.Requests.Include(r => r.Books).SingleOrDefaultAsync(r => r.Id == requestId);
@@ -216,6 +240,13 @@ public class ApprovalResponse : CustomResponse
     public bool RequestNotPending { get; set; }
     public bool RequestNotFound { get; set; }
     public override bool Succeeded() { return UnavailableBooks == 0 && !RequestNotFound && !RequestNotPending; }
+
+}
+public class RejectionResponse : CustomResponse
+{
+    // public bool RequestNotPending { get; set; }
+    public bool RequestNotFound { get; set; }
+    public override bool Succeeded() { return !RequestNotFound; }
 
 }
 

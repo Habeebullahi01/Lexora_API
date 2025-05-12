@@ -19,7 +19,8 @@ public class RequestController(IRequestService requestService, IBookService book
 
     [HttpGet]
     [Authorize(Roles = "Librarian")]
-    [ProducesResponseType<RequestsResponse>(200)]
+    [ProducesResponseType<RequestsResponse>(200, "application/json")]
+    [EndpointSummary("Retrieves a paginated list of Requests")]
     [EndpointDescription(@"The 'status' field of the query parameters is representative of the status of the request which is desired. 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Returned. The default is 0 which corresponds to Pending requests.
     The order field specifies the order; 0 = Descending (newest first) and 1 = Ascending (oldest first)")]
     public async Task<IActionResult> RetrieveRequests(int size = 10, int page = 1, Order order = Order.Descending, RequestStatus status = RequestStatus.Pending)
@@ -47,6 +48,52 @@ public class RequestController(IRequestService requestService, IBookService book
         }
     }
 
+    [HttpPost("action/{id}")]
+    [Authorize(Roles = "Librarian")]
+    [EndpointDescription("For acting on a request. Only Librarians can use this endpoint.")]
+    [ProducesResponseType<RejectionResponse>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<RejectionResponse>(StatusCodes.Status400BadRequest, "application/json")]
+    [ProducesResponseType<BadRequestResult>(400, "application/json")]
+    public async Task<IActionResult> ActOnRequest(int id, [FromQuery] string action)
+    {
+        switch (action)
+        {
+            case "approve":
+            case "reject":
+                break;
+            default:
+                return BadRequest("Invalid action value");
+        }
+        var librarianId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value;
+
+        if (action == "approve")
+        {
+
+            ApprovalResponse res = await _requestService.Approve(id, librarianId);
+            if (!res.Succeeded())
+            {
+                return BadRequest(new ProblemDetails() { Detail = res.Reason });
+            }
+            else
+            {
+                return Ok(res.Request);
+            }
+        }
+        if (action == "reject")
+        {
+            RejectionResponse res = await _requestService.RejectRequest(id, librarianId);
+            if (res.Succeeded())
+            {
+                return Ok(res);
+            }
+            else
+            {
+                return BadRequest(res);
+            }
+        }
+        return BadRequest("Invalid action value");
+    }
+
 
     [HttpGet("{id}")]
     [EndpointSummary("Retrieves a single Borrow Request")]
@@ -65,6 +112,8 @@ public class RequestController(IRequestService requestService, IBookService book
     }
 
     [HttpGet("user")]
+    [ProducesResponseType<RequestsResponse>(200, "application/json")]
+    [EndpointSummary("Retrieves a list of requests made by an authenticated user")]
     [Authorize(Roles = "Reader")]
     public async Task<IActionResult> GetUserRequest()
     {
@@ -86,8 +135,8 @@ public class RequestController(IRequestService requestService, IBookService book
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         CreationResponse a = new();
         BorrowRequest nbr = new() { Duration = newRequestDto.Duration, ReaderId = userId!.Value };
-        nbr.StartDate = new DateOnly();
-        nbr.EndDate = new DateOnly().AddDays(nbr.Duration);
+        // nbr.StartDate = new DateOnly();
+        // nbr.EndDate = new DateOnly().AddDays(nbr.Duration);
         // extract the user id from ?
         // fetch the requested books from book service
         List<Book> requestedBooks = await _bookService.GetBooks(newRequestDto.Books);
