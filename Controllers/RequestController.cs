@@ -50,16 +50,18 @@ public class RequestController(IRequestService requestService, IBookService book
 
     [HttpPost("action/{id}")]
     [Authorize(Roles = "Librarian")]
+    [EndpointSummary("For operating on the lifecyle of a borrow request")]
     [EndpointDescription("For acting on a request. Only Librarians can use this endpoint.")]
     [ProducesResponseType<RejectionResponse>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<RejectionResponse>(StatusCodes.Status400BadRequest, "application/json")]
     [ProducesResponseType<BadRequestResult>(400, "application/json")]
-    public async Task<IActionResult> ActOnRequest(int id, [FromQuery] string action)
+    public async Task<IActionResult> ActOnRequest(int id, [FromQuery][Description("This represents the desired action to be taken on the BorrowRequest; approve, reject, or return")] string action)
     {
         switch (action)
         {
             case "approve":
             case "reject":
+            case "return":
                 break;
             default:
                 return BadRequest("Invalid action value");
@@ -72,7 +74,7 @@ public class RequestController(IRequestService requestService, IBookService book
             ApprovalResponse res = await _requestService.Approve(id, librarianId);
             if (!res.Succeeded())
             {
-                return BadRequest(new ProblemDetails() { Detail = res.Reason });
+                return BadRequest(res);
             }
             else
             {
@@ -89,6 +91,18 @@ public class RequestController(IRequestService requestService, IBookService book
             else
             {
                 return BadRequest(res);
+            }
+        }
+        if (action == "return")
+        {
+            BorrowRequest? borrowRequest = await _requestService.Return(id);
+            if (borrowRequest == null)
+            {
+                return BadRequest();
+            }
+            else
+            {
+                return Ok();
             }
         }
         return BadRequest("Invalid action value");

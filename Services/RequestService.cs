@@ -45,6 +45,14 @@ public interface IRequestService
     /// <param name="librarianId">Id of the librarian who initiated this action</param>
     /// <returns>A rejection response object</returns>
     public Task<RejectionResponse> RejectRequest(int requestId, string librarianId);
+
+    /// <summary>
+    /// Marks a BorrowRequest as returned
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public Task<BorrowRequest?> Return(int id);
+
 }
 
 public class RequestService(AppDbContext context, IBookService bookService) : IRequestService
@@ -146,6 +154,17 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
             };
             return response;
         }
+        // ensure reader has no outstanding penalty
+        var outstanding = _context.Requests.FirstOrDefault(r => r.ReaderId == request.ReaderId && r.PenaltyIncurred > 0);
+        if (outstanding != null)
+        {
+            ApprovalResponse response = new()
+            {
+                OutstandingPenalty = true,
+                Reason = "User has outstanding penalty."
+            };
+            return response;
+        }
         // ensure books are available (book.AvailableQuantity > 0)
         List<Book> requestedBooks = request.Books;
         List<Book> unavailableBooks = [];
@@ -224,6 +243,43 @@ public class RequestService(AppDbContext context, IBookService bookService) : IR
         return res;
     }
 
+    public async Task<BorrowRequest?> Return(int id)
+    {
+        // retrieve request
+        var req = await _context.Requests.Include(r => r.Books).FirstOrDefaultAsync(r => r.Id == id);
+        if (req == null || req.Status != RequestStatus.Approved)
+        {
+            return null;
+        }
+        List<int> bookIds = [];
+        // reset available books
+        foreach (Book book in req.Books)
+        {
+            bookIds.Add(book.Id);
+            Console.WriteLine($"Added book with Id: {book.Id}");
+        }
+        Console.WriteLine(bookIds.ToArray().ToString());
+        _bookService.ReturnBooks(bookIds);
+        // set return date
+        req.ReturnDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        // calculate and set penalty
+        // penalty  is $1 per book per day
+        var bookCount = req.Books.Count;
+        var defaultedDays = DateTime.Now.CompareTo(req.EndDate.ToDateTime(TimeOnly.MinValue));
+        var endDate = req.EndDate.ToDateTime(TimeOnly.MinValue);
+        var daysLate = (DateTime.Now.Date - endDate.Date).Days;
+        if (daysLate <= 0)
+        {
+            daysLate = 0;
+        }
+        decimal penalty = bookCount * daysLate;
+        Console.WriteLine($"Penalty: {penalty}");
+        req.PenaltyIncurred = penalty;
+        // mark as returned
+        req.Status = RequestStatus.Returned;
+        await _context.SaveChangesAsync();
+        return req;
+    }
 }
 
 public abstract class CustomResponse
@@ -237,9 +293,10 @@ public abstract class CustomResponse
 }
 public class ApprovalResponse : CustomResponse
 {
+    public bool OutstandingPenalty { get; set; }
     public bool RequestNotPending { get; set; }
     public bool RequestNotFound { get; set; }
-    public override bool Succeeded() { return UnavailableBooks == 0 && !RequestNotFound && !RequestNotPending; }
+    public override bool Succeeded() { return UnavailableBooks == 0 && !RequestNotFound && !RequestNotPending && !OutstandingPenalty; }
 
 }
 public class RejectionResponse : CustomResponse

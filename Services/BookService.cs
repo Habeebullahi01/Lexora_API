@@ -43,6 +43,11 @@ public interface IBookService
     /// </summary>
     /// <param name="bookIds">A List of Ids corresponding to those of the Books to be operated on</param>
     public void BorrowBooks(List<int> bookIds);
+    /// <summary>
+    /// Increases the AvailableQuantity property of a series of Books by 1 each.
+    /// </summary>
+    /// <param name="bookIds">A List of Ids corresponding to those of the Books to be operated on</param>
+    public void ReturnBooks(List<int> bookIds);
 
     /// <summary>
     /// Retrieves the full information about a single book.
@@ -202,14 +207,29 @@ public class BookService(AppDbContext context) : IBookService
     {
         Console.WriteLine("Borrowing books...");
         List<Book> books = await _context.Books.Where(b => bookIds.Contains(b.Id)).ToListAsync();
-        Console.WriteLine($"There are {bookIds.Count} books to work on");
-        Console.WriteLine($"There are {books.Count} books to work on");
+        // Console.WriteLine($"There are {bookIds.Count} books to work on");
+        // Console.WriteLine($"There are {books.Count} books to work on");
         foreach (Book book in books)
         {
             Console.WriteLine(book.Author);
             Console.WriteLine(book.AvailableQuantity);
             book.AvailableQuantity -= 1;
             Console.WriteLine(book.AvailableQuantity);
+        }
+        await _context.SaveChangesAsync();
+    }
+    public async void ReturnBooks(List<int> bookIds)
+    {
+        Console.WriteLine("Returning books...");
+        List<Book> books = await _context.Books.Where(b => bookIds.Contains(b.Id)).ToListAsync();
+        // Console.WriteLine($"There are {bookIds.Count} books to work on");
+        // Console.WriteLine($"There are {books.Count} books to work on");
+        foreach (Book book in books)
+        {
+            // Console.WriteLine(book.Author);
+            // Console.WriteLine(book.AvailableQuantity);
+            book.AvailableQuantity += 1;
+            // Console.WriteLine(book.AvailableQuantity);
         }
         await _context.SaveChangesAsync();
     }
