@@ -10,6 +10,21 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+DotNetEnv.Env.Load();
+var url = System.Environment.GetEnvironmentVariable("DB_URL")!;
+string host = System.Environment.GetEnvironmentVariable("HOST")!;
+string user = System.Environment.GetEnvironmentVariable("USER")!;
+string pwd = System.Environment.GetEnvironmentVariable("PASSWORD")!;
+string dbname = System.Environment.GetEnvironmentVariable("DBNAME")!;
+var port = Environment.GetEnvironmentVariable("PORT")!;
+
+string u = $"Host={host};PORT={port};Username={user};Password={pwd};Database={dbname}";
+
+
+Console.WriteLine(u);
+// Console.WriteLine(typeof(url));
+
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
@@ -31,12 +46,12 @@ builder.Services.AddControllers();
 // Add DbContext
 builder.Services.AddDbContext<AuthDbContext>(options =>
 {
-    options.UseSqlite("Data Source=Auth.db");
+    options.UseNpgsql(u);
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlite("Data Source = Lexora.db");
+    options.UseNpgsql(u);
 });
 
 // Add Identity
