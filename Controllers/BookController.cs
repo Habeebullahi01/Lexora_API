@@ -3,6 +3,7 @@ using lexora_api.Models;
 using lexora_api.Models.Dto;
 using lexora_api.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using static System.Net.Mime.MediaTypeNames;
@@ -23,7 +24,15 @@ public class BookController(IBookService bookService) : ControllerBase
     public async Task<IActionResult> GetBooks([FromQuery] int page = 1, [FromQuery] SortCriteria sortBy = SortCriteria.PublicationDate, [FromQuery] int limit = 10)
     {
         var retrievedBooks = await _bookService.GetBooks(new Filter() { SortBy = sortBy }, page, limit);
-        return Ok(retrievedBooks);
+        if (retrievedBooks != null)
+        {
+
+            return Ok(retrievedBooks);
+        }
+        else
+        {
+            return Problem(detail: "Internal Server Error", statusCode: 501);
+        }
     }
 
     [HttpGet("few")]

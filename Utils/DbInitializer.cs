@@ -10,9 +10,17 @@ public class DbIintializer
         string[] roles = ["Reader", "Librarian"];
         foreach (string role in roles)
         {
-            if (!await roleManager.RoleExistsAsync(role))
+            try
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
             }
         }
     }

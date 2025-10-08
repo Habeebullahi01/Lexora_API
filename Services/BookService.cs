@@ -29,7 +29,7 @@ public interface IBookService
     /// </summary>
     /// <param name="filter">Criteria to filter or sort</param>
     /// <returns>List of Books</returns>
-    public Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit);
+    public Task<BooksResponse?> GetBooks(Filter filter, int pageNumber, int limit);
 
     /// <summary>
     /// Retrieves a List of Books without pagination data. For use by other services.
@@ -94,7 +94,7 @@ public class BookService(AppDbContext context) : IBookService
         return books;
     }
 
-    public async Task<BooksResponse> GetBooks(Filter filter, int pageNumber, int limit)
+    public async Task<BooksResponse?> GetBooks(Filter filter, int pageNumber, int limit)
     {
         var books = _context.Books;
         // minimun limit is 1
@@ -129,11 +129,13 @@ public class BookService(AppDbContext context) : IBookService
 
         totalPages = (int)Math.Ceiling((decimal)totalItems / limit);
 
-        var skipped = orderedBooks.Skip(pageNumber - 1 * limit);
+        var c = (pageNumber - 1) * limit;
+        Console.WriteLine(c);
+
+        var skipped = orderedBooks.Skip(c);
+
         var picked = await skipped.Take(limit).ToListAsync();
         return new BooksResponse() { Books = picked, CurrentPage = pageNumber, ItemsPerPage = limit, TotalItems = totalItems, TotalPages = totalPages };
-
-        // return await picked.ToListAsync();
     }
 
     public async Task<List<Book>> GetBooks(List<int> bookIds)

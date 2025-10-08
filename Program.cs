@@ -1,5 +1,6 @@
 using System.Text;
 using lexora_api.Data;
+using lexora_api.Middlewares;
 using lexora_api.Models;
 using lexora_api.Services;
 using lexora_api.Utils;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +23,7 @@ var port = Environment.GetEnvironmentVariable("PORT")!;
 string u = $"Host={host};PORT={port};Username={user};Password={pwd};Database={dbname}";
 
 
-Console.WriteLine(u);
+// Console.WriteLine(u);
 // Console.WriteLine(typeof(url));
 
 
@@ -43,6 +45,9 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
 
+// Serilog
+// Log.Logger = new LoggerConfiguration().WriteTo.File("testLog.txt").CreateLogger();
+// builder.Services.AddSerilog();
 // Add DbContext
 builder.Services.AddDbContext<AuthDbContext>(options =>
 {
@@ -100,7 +105,6 @@ builder.Services.AddCors(options =>
         //   .AllowCredentials(); // Optional, if you're using cookies or auth headers
     });
 });
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -112,6 +116,7 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    // var logger = new 
     await DbIintializer.SeedRoles(services);
 }
 
@@ -128,7 +133,7 @@ app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCus();
 app.MapControllers();
 
 app.Run();
